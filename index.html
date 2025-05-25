@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THIS THAT STUDIO 市集统计</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .touch-button {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const ArtMarketCounter = () => {
+            const productCategories = {
+                '大手提包': ['长毛狗', '小乖狗', '迎风小狗', '三角帽小狗', '蝴蝶兔', '兔头', '熊头', '长面包', '黑狗头', '哈巴狗'],
+                '杯垫': ['三角帽小狗', '小乖狗', '三头面包', '四头面包', '熊头', '狗头', '蝴蝶结兔', '迎风小狗', '兔头', '垂耳兔头', '小胖兔头', '四头刘海面包', '猫头', '三头圆眼睛面包', '蜡染杯垫'],
+                '餐垫': ['小乖狗', '三角帽小狗'],
+                '拉链小包': ['兔头', '狗头', '熊头', '四头面包', '三角帽小狗', '蝴蝶结兔', '迎风小狗', '三头面包', '小乖狗', '垂耳兔头', '猫头', '三头圆眼睛面包', '小胖兔头', '四头刘海面包', '眉毛小狗生气', '红领巾小狗', '睡着小狗'],
+                '小号斜挎包': ['三角帽小狗', '小乖狗', '兔头', '狗头'],
+                '大号斜挎包': ['三角帽小狗', '兔头', '小乖狗', '哈巴狗'],
+                '扇子': ['三角帽小狗', '眉毛小狗']
+            };
+
+            const initializeCounts = () => {
+                const counts = {};
+                Object.keys(productCategories).forEach(category => {
+                    counts[category] = {};
+                    productCategories[category].forEach(pattern => {
+                        counts[category][pattern] = 0;
+                    });
+                });
+                return counts;
+            };
+
+            const [counts, setCounts] = useState(initializeCounts);
+            const [currentCategory, setCurrentCategory] = useState(null);
+            const [showSummary, setShowSummary] = useState(false);
+
+            const incrementCount = (category, pattern) => {
+                setCounts(prev => ({
+                    ...prev,
+                    [category]: {
+                        ...prev[category],
+                        [pattern]: prev[category][pattern] + 1
+                    }
+                }));
+            };
+
+            const decrementCount = (category, pattern) => {
+                setCounts(prev => ({
+                    ...prev,
+                    [category]: {
+                        ...prev[category],
+                        [pattern]: Math.max(0, prev[category][pattern] - 1)
+                    }
+                }));
+            };
+
+            const resetAllCounts = () => {
+                if (confirm('确定要重置所有计数吗？')) {
+                    setCounts(initializeCounts());
+                }
+            };
+
+            const getCategoryTotal = (category) => {
+                return Object.values(counts[category]).reduce((sum, count) => sum + count, 0);
+            };
+
+            const getTotalCount = () => {
+                return Object.keys(counts).reduce((total, category) => {
+                    return total + getCategoryTotal(category);
+                }, 0);
+            };
+
+            const categoryColors = {
+                '大手提包': { bg: '#c7522a', text: 'white' },
+                '杯垫': { bg: '#d68a58', text: 'white' },
+                '餐垫': { bg: '#e5c185', text: 'black' },
+                '拉链小包': { bg: '#96bb9f', text: 'white' },
+                '小号斜挎包': { bg: '#74a892', text: 'white' },
+                '大号斜挎包': { bg: '#3a978c', text: 'white' },
+                '扇子': { bg: '#008585', text: 'white' }
+            };
+
+            const exportToCSV = () => {
+                let csvContent = '品类,款式,数量\n';
+                Object.keys(counts).forEach(category => {
+                    Object.entries(counts[category]).forEach(([pattern, count]) => {
+                        if (count > 0) {
+                            csvContent += `${category},${pattern},${count}\n`;
+                        }
+                    });
+                });
+
+                const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '市场统计数据.csv';
+                link.click();
+            };
+
+            if (!currentCategory && !showSummary) {
+                return (
+                    <div className="min-h-screen bg-gray-50 p-4">
+                        <div className="max-w-md mx-auto">
+                            <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
+                                <h1 className="text-2xl font-bold text-center text-gray-800 mb-1">🎨 THIS THAT STUDIO 市集统计</h1>
+                                <div className="text-center text-gray-500 text-sm mb-1">大馋小子开发</div>
+                                <div className="text-center text-gray-400 text-xs mb-2">聪明蛋子❤大馋小子</div>
+                                <div className="text-center text-gray-600 mb-4">
+                                    <p>总计数：<span className="text-2xl font-bold text-blue-600">{getTotalCount()}</span></p>
+                                </div>
+                                <div className="flex gap-2 justify-center">
+                                    <button onClick={() => setShowSummary(true)} className="touch-button flex items-center gap-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors">
+                                        📊 统计
+                                    </button>
+                                    <button onClick={resetAllCounts} className="touch-button flex items-center gap-1 bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+                                        🔄 重置
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3">
+                                {Object.keys(productCategories).map(category => (
+                                    <button key={category} onClick={() => setCurrentCategory(category)} className="touch-button text-white p-4 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 active:scale-95"
+                                        style={{ backgroundColor: categoryColors[category].bg, color: categoryColors[category].text }}>
+                                        <div className="text-lg font-bold">{category}</div>
+                                        <div className="text-sm opacity-90">
+                                            {productCategories[category].length} 款式 · 已计数 {getCategoryTotal(category)}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (showSummary) {
+                return (
+                    <div className="min-h-screen bg-gray-50 p-4">
+                        <div className="max-w-md mx-auto">
+                            <div className="bg-white rounded-lg shadow-lg p-6">
+                                <div className="flex items-center gap-3 mb-6">
+                                    <button onClick={() => setShowSummary(false)} className="touch-button p-2 hover:bg-gray-100 rounded-full transition-colors">← 返回</button>
+                                    <h2 className="text-xl font-bold">📊 销售统计</h2>
+                                    <button onClick={exportToCSV} className="touch-button px-4 py-2 rounded-lg text-black" style={{ backgroundColor: '#f0daa5' }}>
+                                        📤 导出 CSV
+                                    </button>
+                                </div>
+
+                                <div className="mb-6 text-center">
+                                    <div className="text-3xl font-bold text-blue-600">{getTotalCount()}</div>
+                                    <div className="text-gray-600">总销量</div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {Object.keys(productCategories).map(category => {
+                                        const total = getCategoryTotal(category);
+                                        return (
+                                            <div key={category} className="border rounded-lg p-4">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="px-3 py-1 text-sm rounded-full" style={{ backgroundColor: categoryColors[category].bg, color: categoryColors[category].text }}>{category}</span>
+                                                    <span className="font-bold text-lg">{total}</span>
+                                                </div>
+                                                {total > 0 && (
+                                                    <div className="ml-4 space-y-1">
+                                                        {Object.entries(counts[category])
+                                                            .filter(([_, count]) => count > 0)
+                                                            .map(([pattern, count]) => (
+                                                                <div key={pattern} className="flex justify-between text-sm text-gray-600">
+                                                                    <span>{pattern}</span>
+                                                                    <span>{count}</span>
+                                                                </div>
+                                                            ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50 p-4">
+                    <div className="max-w-md mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-4 mb-4">
+                            <div className="flex items-center gap-3 mb-4">
+                                <button onClick={() => setCurrentCategory(null)} className="touch-button p-2 hover:bg-gray-100 rounded-full transition-colors">← 返回</button>
+                                <div>
+                                    <h2 className="text-lg font-bold">{currentCategory}</h2>
+                                    <p className="text-sm text-gray-600">已计数：{getCategoryTotal(currentCategory)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
+                            {productCategories[currentCategory].map(pattern => (
+                                <div key={pattern} className="bg-white rounded-lg shadow-md p-4 flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="font-medium text-gray-800">{pattern}</div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <button onClick={() => decrementCount(currentCategory, pattern)} className="touch-button w-12 h-12 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors active:scale-95 text-xl font-bold flex items-center justify-center" disabled={counts[currentCategory][pattern] === 0}>-</button>
+                                        <div className="w-12 text-center"><span className="text-2xl font-bold text-blue-600">{counts[currentCategory][pattern]}</span></div>
+                                        <button onClick={() => incrementCount(currentCategory, pattern)} className="touch-button w-12 h-12 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors active:scale-95 text-xl font-bold flex items-center justify-center">+</button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-6 text-center text-gray-500 text-sm">
+                            💡 点击 + 号增加，点击 - 号减少
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<ArtMarketCounter />, document.getElementById('root'));
+    </script>
+</body>
+</html>
